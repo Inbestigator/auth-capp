@@ -65,9 +65,7 @@ export default {
       const token = (await response.json()) as { access_token: string };
       const [guildInfo, member] = await Promise.all([
         getGuildInfo(body.guild_id),
-        getCurrentUserMember(body.guild_id, {
-          authorization: `Bearer ${token.access_token}`,
-        }),
+        getCurrentUserMember(body.guild_id, { authorization: `Bearer ${token.access_token}` }),
       ]);
 
       if (guildInfo && !member.roles.includes(guildInfo.add_role)) {

@@ -42,7 +42,7 @@ try {
     response_type: "code",
     state: "",
     prompt: "none",
-    scope: ["identify"],
+    scope: ["identify", "guilds.members.read"],
   });
   const guild_id = new URLSearchParams(window.location.search).get("guild_id");
 
