@@ -12,3 +12,13 @@ await db.execute(`
     add_role TEXT NOT NULL
   )
 `);
+
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS authorizations (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    header_print TEXT NOT NULL,
+    had_role BOOLEAN NOT NULL,
+    authorized_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);

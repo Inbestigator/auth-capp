@@ -20,6 +20,11 @@ const getGuild = `
   WHERE guild_id = ?
 `;
 
+const insertAuthorization = `
+  INSERT INTO authorizations (guild_id, user_id, header_print, had_role)
+  VALUES (?, ?, ?, ?)
+`;
+
 export async function setGuildInfo(guildId: string, sendTo: string, addRole: string) {
   await db.execute({ sql: upsertGuild, args: [guildId, sendTo, addRole] });
 }
@@ -32,4 +37,13 @@ export async function getGuildInfo(
   const row = result.rows[0] as { send_to: string; add_role: string } | undefined;
 
   return row ?? null;
+}
+
+export async function addAuthorization(
+  guildId: string,
+  userId: string,
+  headerPrint: string,
+  hadRole: boolean,
+) {
+  await db.execute({ sql: insertAuthorization, args: [guildId, userId, headerPrint, hadRole] });
 }

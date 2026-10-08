@@ -1,12 +1,12 @@
+import { createHash } from "node:crypto";
 import { addMemberRole, getCurrentUserMember } from "dressed";
 import { handleRequest } from "dressed/server";
 import { botEnv } from "dressed/utils";
 import * as configCmd from "./bot/config-cmd";
 import * as configModal from "./bot/config-modal";
-import { getGuildInfo } from "./db";
+import { addAuthorization, getGuildInfo } from "./db";
 
 interface Env {
-  ASSETS: { fetch: CallableFunction };
   DISCORD_APP_ID: string;
   DISCORD_SECRET: string;
 }
@@ -44,7 +44,6 @@ export default {
       try {
         await verifySignature(req);
       } catch (e) {
-        console.log(e);
         return Response.json(typeof e === "string" ? e : "Invalid headers", { status: 401 });
       }
 
@@ -69,10 +68,18 @@ export default {
         getGuildInfo(body.guild_id),
         getCurrentUserMember(body.guild_id, { authorization: `Bearer ${token.access_token}` }),
       ]);
+      const hasRole = !!guildInfo && member.roles.includes(guildInfo.add_role);
 
-      if (guildInfo && !member.roles.includes(guildInfo.add_role)) {
+      if (guildInfo && !hasRole) {
         await addMemberRole(body.guild_id, member.user.id, guildInfo.add_role);
       }
+
+      await addAuthorization(
+        body.guild_id,
+        member.user.id,
+        generateFingerprint(Object.fromEntries(req.headers)),
+        hasRole,
+      );
 
       return Response.json({
         access_token: token.access_token,
@@ -81,7 +88,7 @@ export default {
       });
     }
 
-    return env.ASSETS.fetch(req);
+    return new Response("Not found", { status: 404 });
   },
 };
 
@@ -118,4 +125,27 @@ async function verifySignature(req: Request) {
   if (!isVerified) {
     throw "Invalid request signature";
   }
+}
+
+function generateFingerprint(headers: Record<string, string>) {
+  const relevant = {
+    userAgent: headers["user-agent"] ?? "",
+    clientHints: {
+      ua: headers["sec-ch-ua"] ?? "",
+      platform: headers["sec-ch-ua-platform"] ?? "",
+      mobile: headers["sec-ch-ua-mobile"] ?? "",
+    },
+    language: headers["accept-language"] ?? "",
+    encoding: headers["accept-encoding"] ?? "",
+    fetch: {
+      dest: headers["sec-fetch-dest"] ?? "",
+      mode: headers["sec-fetch-mode"] ?? "",
+      site: headers["sec-fetch-site"] ?? "",
+    },
+    privacy: {
+      dnt: headers.dnt ?? "",
+      gpc: headers["sec-gpc"] ?? "",
+    },
+  };
+  return createHash("sha256").update(JSON.stringify(relevant)).digest("hex");
 }

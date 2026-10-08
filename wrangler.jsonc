@@ -8,8 +8,5 @@
     "command": "bun build ./src/www/index.html --compile --production --target browser --outdir dist",
   },
   "observability": { "enabled": true },
-  "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS",
-  },
+  "assets": { "directory": "./dist" },
 }
