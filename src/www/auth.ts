@@ -46,7 +46,7 @@ try {
   });
   const guild_id = new URLSearchParams(window.location.search).get("guild_id");
 
-  const response = await fetch("/api/token", {
+  const response = await fetch("/api/auth", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code, guild_id }),

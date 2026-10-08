@@ -12,37 +12,40 @@ interface Env {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url);
 
     if (url.pathname === "/api/bot") {
       return handleRequest(
-        request,
+        req,
         { config: configCmd },
         { modals: { config: { ...configModal } } },
         {},
       );
     }
 
-    if (url.pathname === "/api/token") {
-      if (request.method !== "POST") {
+    if (url.pathname === "/api/auth") {
+      if (req.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
       }
 
       let body: { code?: string; guild_id?: string };
 
       try {
-        body = await request.json();
+        body = await req.json();
       } catch {
-        return Response.json({ error: "Invalid JSON" }, { status: 400 });
+        return Response.json("Invalid JSON", { status: 400 });
       }
 
-      if (!body.code) {
-        return Response.json({ error: "Missing code" }, { status: 400 });
+      if (!body.code || !body.guild_id) {
+        return Response.json("Invalid format", { status: 400 });
       }
 
-      if (!body.guild_id) {
-        return Response.json({ error: "Missing guild_id" }, { status: 400 });
+      try {
+        await verifySignature(req);
+      } catch (e) {
+        console.log(e);
+        return Response.json(typeof e === "string" ? e : "Invalid headers", { status: 401 });
       }
 
       const response = await fetch("https://discord.com/api/v10/oauth2/token", {
@@ -58,8 +61,7 @@ export default {
 
       if (!response.ok) {
         console.error("Discord token exchange failed:", await response.text());
-
-        return Response.json({ error: "Discord authentication failed" }, { status: 401 });
+        return Response.json("Discord authentication failed", { status: 401 });
       }
 
       const token = (await response.json()) as { access_token: string };
@@ -79,6 +81,41 @@ export default {
       });
     }
 
-    return env.ASSETS.fetch(request);
+    return env.ASSETS.fetch(req);
   },
 };
+
+async function verifySignature(req: Request) {
+  const signature = req.headers.get("X-Signature-Ed25519") ?? "";
+  const timestamp = req.headers.get("X-Signature-Timestamp") ?? "";
+  const payload = req.headers.get("X-Discord-Proxy-Payload") ?? "";
+
+  const payloadBytes = Buffer.from(payload, "base64");
+  const payloadString = payloadBytes.toString("utf-8");
+  const payloadData = JSON.parse(payloadString);
+
+  if (payloadData.created_at.toString() !== timestamp) {
+    throw "Invalid request timestamp";
+  }
+
+  if (payloadData.expires_at < Math.floor(Date.now() / 1000)) {
+    throw "Expired proxy token";
+  }
+
+  const isVerified = await crypto.subtle.verify(
+    { name: "Ed25519" },
+    await crypto.subtle.importKey(
+      "raw",
+      Buffer.from(botEnv.DISCORD_PUBLIC_KEY, "hex"),
+      "Ed25519",
+      false,
+      ["verify"],
+    ),
+    Buffer.from(signature, "hex"),
+    payloadBytes,
+  );
+
+  if (!isVerified) {
+    throw "Invalid request signature";
+  }
+}
