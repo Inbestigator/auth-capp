@@ -1,8 +1,9 @@
+import { addMemberRole, getCurrentUserMember } from "dressed";
 import { handleRequest } from "dressed/server";
+import { botEnv } from "dressed/utils";
 import * as configCmd from "./bot/config-cmd";
 import * as configModal from "./bot/config-modal";
-import { getSendTo } from "./db";
-import { botEnv } from "dressed/utils";
+import { getGuildInfo } from "./db";
 
 interface Env {
   ASSETS: { fetch: CallableFunction };
@@ -18,13 +19,7 @@ export default {
       return handleRequest(
         request,
         { config: configCmd },
-        {
-          modals: {
-            config: {
-              ...configModal,
-            },
-          },
-        },
+        { modals: { config: { ...configModal } } },
         {},
       );
     }
@@ -67,15 +62,22 @@ export default {
         return Response.json({ error: "Discord authentication failed" }, { status: 401 });
       }
 
-      const token = (await response.json()) as {
-        access_token: string;
-      };
+      const token = (await response.json()) as { access_token: string };
+      const [guildInfo, member] = await Promise.all([
+        getGuildInfo(body.guild_id),
+        getCurrentUserMember(body.guild_id, {
+          authorization: `Bearer ${token.access_token}`,
+        }),
+      ]);
 
-      const sendTo = await getSendTo(body.guild_id);
+      if (guildInfo && !member.roles.includes(guildInfo.add_role)) {
+        await addMemberRole(body.guild_id, member.user.id, guildInfo.add_role);
+      }
 
       return Response.json({
         access_token: token.access_token,
-        send_to: sendTo,
+        send_to: guildInfo?.send_to,
+        auth_does_action: !!guildInfo,
       });
     }
 

@@ -6,7 +6,7 @@ const loader = document.getElementById("loader");
 const loaderIcon = document.getElementById("loader-icon");
 const loaderText = document.getElementById("loader-text");
 
-function showSuccess() {
+function showSuccess(text = "Successfully verified!") {
   if (!loader || !loaderIcon || !loaderText) return;
 
   loader.classList.remove("error");
@@ -16,10 +16,10 @@ function showSuccess() {
     <path d="M20 6 9 17l-5-5"/>
   `;
 
-  loaderText.textContent = "Successfully verified!";
+  loaderText.textContent = text;
 }
 
-function showError() {
+function showError(text = "There was a problem authenticating") {
   if (!loader || !loaderIcon || !loaderText) return;
 
   loader.classList.remove("success");
@@ -31,7 +31,7 @@ function showError() {
     <path d="M12 16h.01"/>
   `;
 
-  loaderText.textContent = "There was a problem authenticating";
+  loaderText.textContent = text;
 }
 
 try {
@@ -56,11 +56,15 @@ try {
     throw new Error("Failed to exchange Discord authorization code");
   }
 
-  const { access_token, send_to } = await response.json();
+  const { access_token, send_to, auth_does_action } = await response.json();
 
   await discordSdk.commands.authenticate({ access_token });
 
-  showSuccess();
+  showSuccess(
+    auth_does_action
+      ? undefined
+      : "You were verified, but the bot hasn't been configured to do anything yet!",
+  );
 
   if (send_to) {
     discordSdk.commands.openExternalLink({

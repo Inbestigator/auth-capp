@@ -8,6 +8,7 @@ const db = createClient({
 await db.execute(`
   CREATE TABLE IF NOT EXISTS guild_config (
     guild_id TEXT PRIMARY KEY,
-    send_to TEXT NOT NULL
+    send_to TEXT NOT NULL,
+    add_role TEXT NOT NULL
   )
 `);

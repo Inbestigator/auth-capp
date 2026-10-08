@@ -2,9 +2,9 @@
   "name": "auth-capp",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/server.ts",
+    "dev": "bun --watch src/index.ts",
     "setup": "bun src/db/setup.ts",
-    "start": "bun src/server.ts"
+    "start": "bun src/index.ts"
   },
   "dependencies": {
     "@discord/embedded-app-sdk": "^2.5.0",
