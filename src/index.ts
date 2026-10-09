@@ -126,18 +126,19 @@ export default {
         getGuildInfo(body.guild_id),
         getCurrentUserMember(body.guild_id, { authorization: `Bearer ${token.access_token}` }),
       ]);
-      const hasRole = !!guildInfo && member.roles.includes(guildInfo.add_role);
 
-      const [, , userAuths] = await Promise.all([
-        guildInfo && !hasRole && addMemberRole(body.guild_id, member.user.id, guildInfo.add_role),
-        addAuthorization(
-          body.guild_id,
-          member.user.id,
-          generateFingerprint(Object.fromEntries(req.headers)),
-          hasRole,
-        ).catch(() => {}),
-        countAuths(member.user.id).catch(() => {}),
-      ]);
+      const [, , userAuths] =
+        guildInfo && member.roles.includes(guildInfo.add_role)
+          ? []
+          : await Promise.all([
+              guildInfo && addMemberRole(body.guild_id, member.user.id, guildInfo.add_role),
+              addAuthorization(
+                body.guild_id,
+                member.user.id,
+                generateFingerprint(Object.fromEntries(req.headers)),
+              ).catch(() => {}),
+              countAuths(member.user.id).catch(() => {}),
+            ]);
 
       return Response.json({
         access_token: token.access_token,

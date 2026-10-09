@@ -19,7 +19,6 @@ await db.execute(`
     guild_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     header_print TEXT NOT NULL,
-    had_role BOOLEAN NOT NULL,
     authorized_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
