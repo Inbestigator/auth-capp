@@ -1,14 +1,23 @@
 import { createHash } from "node:crypto";
+import { createChallenge, type Payload, randomInt, verifySolution } from "altcha-lib";
+import { deriveKey } from "altcha-lib/algorithms/pbkdf2";
 import { addMemberRole, getCurrentUserMember } from "dressed";
 import { handleRequest } from "dressed/server";
 import { botEnv } from "dressed/utils";
 import * as configCmd from "./bot/config-cmd";
 import * as configModal from "./bot/config-modal";
-import { addAuthorization, getGuildInfo } from "./db";
+import { addAuthorization, countAuths, getGuildInfo } from "./db";
 
 interface Env {
   DISCORD_APP_ID: string;
   DISCORD_SECRET: string;
+  ALTCHA_SECRET: string;
+}
+
+interface AuthBody {
+  code?: string;
+  guild_id?: string;
+  altcha?: Payload;
 }
 
 export default {
@@ -24,12 +33,32 @@ export default {
       );
     }
 
+    if (url.pathname === "/api/altcha/challenge") {
+      if (req.method !== "GET") {
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: { Allow: "GET" },
+        });
+      }
+
+      const challenge = await createChallenge({
+        algorithm: "PBKDF2/SHA-256",
+        cost: 5000,
+        counter: randomInt(5000, 10000),
+        deriveKey,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        hmacSignatureSecret: env.ALTCHA_SECRET,
+      });
+
+      return Response.json(challenge, { headers: { "Cache-Control": "no-store" } });
+    }
+
     if (url.pathname === "/api/auth") {
       if (req.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
       }
 
-      let body: { code?: string; guild_id?: string };
+      let body: AuthBody;
 
       try {
         body = await req.json();
@@ -37,14 +66,42 @@ export default {
         return Response.json("Invalid JSON", { status: 400 });
       }
 
-      if (!body.code || !body.guild_id) {
-        return Response.json("Invalid format", { status: 400 });
+      if (!body.code || !body.guild_id || !body.altcha) {
+        return Response.json("Invalid body format", { status: 400 });
       }
 
       try {
         await verifySignature(req);
       } catch (e) {
         return Response.json(typeof e === "string" ? e : "Invalid headers", { status: 401 });
+      }
+
+      try {
+        const payload = body.altcha;
+
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          payload === null ||
+          !payload.challenge ||
+          !payload.solution
+        ) {
+          return Response.json({ error: "Verification required" }, { status: 400 });
+        }
+
+        const verification = await verifySolution({
+          challenge: payload.challenge,
+          solution: payload.solution,
+          deriveKey,
+          hmacSignatureSecret: env.ALTCHA_SECRET,
+        });
+
+        if (!verification.verified) {
+          return Response.json({ error: "Bot verification failed" }, { status: 403 });
+        }
+      } catch (error) {
+        console.error("ALTCHA verification failed:", error);
+        return Response.json({ error: "Bot verification unavailable" }, { status: 503 });
       }
 
       const response = await fetch("https://discord.com/api/v10/oauth2/token", {
@@ -64,27 +121,29 @@ export default {
       }
 
       const token = (await response.json()) as { access_token: string };
+
       const [guildInfo, member] = await Promise.all([
         getGuildInfo(body.guild_id),
         getCurrentUserMember(body.guild_id, { authorization: `Bearer ${token.access_token}` }),
       ]);
       const hasRole = !!guildInfo && member.roles.includes(guildInfo.add_role);
 
-      if (guildInfo && !hasRole) {
-        await addMemberRole(body.guild_id, member.user.id, guildInfo.add_role);
-      }
-
-      await addAuthorization(
-        body.guild_id,
-        member.user.id,
-        generateFingerprint(Object.fromEntries(req.headers)),
-        hasRole,
-      );
+      const [, , userAuths] = await Promise.all([
+        guildInfo && !hasRole && addMemberRole(body.guild_id, member.user.id, guildInfo.add_role),
+        addAuthorization(
+          body.guild_id,
+          member.user.id,
+          generateFingerprint(Object.fromEntries(req.headers)),
+          hasRole,
+        ).catch(() => {}),
+        countAuths(member.user.id).catch(() => {}),
+      ]);
 
       return Response.json({
         access_token: token.access_token,
         send_to: guildInfo?.send_to,
         auth_does_action: !!guildInfo,
+        num_auths: userAuths,
       });
     }
 

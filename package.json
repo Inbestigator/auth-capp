@@ -9,6 +9,8 @@
   "dependencies": {
     "@discord/embedded-app-sdk": "^2.5.0",
     "@libsql/client": "^0.18.0",
+    "altcha": "^3.3.0",
+    "altcha-lib": "^2.6.0",
     "dressed": "^2.1.0-canary.1",
     "wrangler": "^4.148.0"
   },

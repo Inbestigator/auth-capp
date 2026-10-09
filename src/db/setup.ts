@@ -15,6 +15,7 @@ await db.execute(`
 
 await db.execute(`
   CREATE TABLE IF NOT EXISTS authorizations (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     guild_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     header_print TEXT NOT NULL,

@@ -25,6 +25,12 @@ const insertAuthorization = `
   VALUES (?, ?, ?, ?)
 `;
 
+const countAuthorizations = `
+  SELECT COUNT(*) AS count
+  FROM authorizations
+  WHERE user_id = ? AND had_role = 0
+`;
+
 export async function setGuildInfo(guildId: string, sendTo: string, addRole: string) {
   await db.execute({ sql: upsertGuild, args: [guildId, sendTo, addRole] });
 }
@@ -46,4 +52,9 @@ export async function addAuthorization(
   hadRole: boolean,
 ) {
   await db.execute({ sql: insertAuthorization, args: [guildId, userId, headerPrint, hadRole] });
+}
+
+export async function countAuths(userId: string): Promise<number> {
+  const result = await db.execute({ sql: countAuthorizations, args: [userId] });
+  return Number(result.rows[0]?.count ?? 0);
 }
