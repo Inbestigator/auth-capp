@@ -34,54 +34,69 @@ function showError(text = "There was a problem authenticating") {
 
   loaderText.textContent = text;
 }
+
 const widget = document.querySelector("altcha-widget");
 
-widget?.addEventListener("statechange", async (event) => {
-  const { detail } = event as Event & { detail: { state: string; payload: string } };
-  if (["error", "unverified", "expired"].includes(detail.state)) {
-    showError("Failed CAPTCHA");
-    return;
-  }
-  if (detail.state === "verified") {
-    try {
-      await discordSdk.ready();
-      const { code } = await discordSdk.commands.authorize({
-        client_id: discordSdk.clientId,
-        response_type: "code",
-        state: "",
-        prompt: "none",
-        scope: ["identify", "guilds.members.read"],
-      });
-      const guild_id = new URLSearchParams(window.location.search).get("guild_id");
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, guild_id, altcha: JSON.parse(atob(detail.payload)) }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to exchange Discord authorization code");
-      }
-      const { access_token, send_to, auth_does_action, num_auths } = (await response.json()) as {
-        access_token: string;
-        send_to?: string;
-        auth_does_action: boolean;
-        num_auths?: number;
-      };
-      await discordSdk.commands.authenticate({ access_token });
-      showSuccess(
-        auth_does_action
-          ? num_auths
-            ? `Successfully verified! You've been verified ${num_auths + 1} times now.`
-            : "Successfully verified!"
-          : "You were verified, but the bot hasn't been configured to do anything yet!",
-      );
-      if (send_to) {
-        discordSdk.commands.openExternalLink({
-          url: `https://discord.com/channels/${guild_id}/${send_to}`,
-        });
-      }
-    } catch {
-      showError();
+const challengePromise = new Promise((r) => {
+  widget?.addEventListener("statechange", async (event) => {
+    const { detail } = event as Event & { detail: { state: string; payload: string } };
+    switch (detail.state) {
+      case "expired":
+        showError("CAPTCHA expired");
+        return;
+      case "error":
+      case "unverified":
+        showError("Failed CAPTCHA");
+        return;
+      case "verified":
+        if (loaderText) loaderText.textContent = "Authorizing...";
+        r(JSON.parse(atob(detail.payload)));
     }
-  }
+  });
 });
+
+const [altcha, { code }] = await Promise.all([
+  challengePromise,
+  discordSdk.ready().then(() =>
+    discordSdk.commands.authorize({
+      client_id: discordSdk.clientId,
+      response_type: "code",
+      state: "",
+      prompt: "none",
+      scope: ["identify", "guilds.members.read"],
+    }),
+  ),
+]);
+
+try {
+  const guild_id = new URLSearchParams(window.location.search).get("guild_id");
+  const response = await fetch("/api/auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, guild_id, altcha }),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to exchange Discord authorization code");
+  }
+  const { access_token, send_to, auth_does_action, num_auths } = (await response.json()) as {
+    access_token: string;
+    send_to?: string;
+    auth_does_action: boolean;
+    num_auths?: number;
+  };
+  await discordSdk.commands.authenticate({ access_token });
+  showSuccess(
+    auth_does_action
+      ? num_auths
+        ? `Successfully verified! You've been verified ${num_auths + 1} times now.`
+        : "Successfully verified!"
+      : "You were verified, but the bot hasn't been configured to do anything yet!",
+  );
+  if (send_to && document.hasFocus()) {
+    discordSdk.commands.openExternalLink({
+      url: `https://discord.com/channels/${guild_id}/${send_to}`,
+    });
+  }
+} catch {
+  showError();
+}
