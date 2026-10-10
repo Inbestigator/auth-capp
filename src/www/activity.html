@@ -129,11 +129,7 @@
     </style>
   </head>
   <body>
-    <altcha-widget
-      challenge="/api/altcha/challenge"
-      display="invisible"
-      auto="onload"
-    ></altcha-widget>
+    <altcha-widget challenge="/api/challenge" display="invisible" auto="onload"></altcha-widget>
     <div id="loader">
       <svg
         id="loader-icon"
@@ -158,10 +154,8 @@
         <path d="M2 12h4" />
         <path d="m4.9 4.9 2.9 2.9" />
       </svg>
-
       <span id="loader-text">Completing CAPTCHA...</span>
     </div>
-
-    <script type="module" src="./auth.ts"></script>
+    <script type="module" src="./activity.ts"></script>
   </body>
 </html>

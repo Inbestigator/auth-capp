@@ -92,7 +92,7 @@ try {
         : "Successfully verified!"
       : "You were verified, but the bot hasn't been configured to do anything yet!",
   );
-  if (send_to && document.hasFocus()) {
+  if (send_to) {
     discordSdk.commands.openExternalLink({
       url: `https://discord.com/channels/${guild_id}/${send_to}`,
     });

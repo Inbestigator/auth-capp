@@ -33,7 +33,7 @@ export default {
       );
     }
 
-    if (url.pathname === "/api/altcha/challenge") {
+    if (url.pathname === "/api/challenge") {
       if (req.method !== "GET") {
         return new Response("Method Not Allowed", {
           status: 405,

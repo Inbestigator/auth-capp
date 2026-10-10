@@ -5,7 +5,7 @@
   "compatibility_date": "2026-04-22",
   "compatibility_flags": ["nodejs_compat"],
   "build": {
-    "command": "bun build ./src/www/index.html --compile --production --target browser --outdir dist",
+    "command": "rm -fr dist && bun build ./src/www/*.html --compile --production --target browser --outdir dist",
   },
   "observability": { "enabled": true },
   "assets": { "directory": "./dist" },
