@@ -6,6 +6,12 @@ const discordSdk = new DiscordSDK("1553441490707939419");
 const loader = document.getElementById("loader");
 const loaderIcon = document.getElementById("loader-icon");
 const loaderText = document.getElementById("loader-text");
+const ossLink = document.getElementById("oss-link");
+
+if (ossLink) {
+  ossLink.onclick = () =>
+    discordSdk.commands.openExternalLink({ url: "https://github.com/Inbestigator/auth-capp" });
+}
 
 function showSuccess(text: string) {
   if (!loader || !loaderIcon || !loaderText) return;
