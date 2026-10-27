@@ -1,10 +1,14 @@
 import { createHash } from "node:crypto";
 import { createChallenge, type Payload, randomInt, verifySolution } from "altcha-lib";
 import { deriveKey } from "altcha-lib/algorithms/pbkdf2";
-import { addMemberRole, getCurrentUserMember } from "dressed";
+import { addMemberRole, modifyRoleConnection } from "dressed";
 import { handleRequest } from "dressed/server";
-import { botEnv } from "dressed/utils";
-import * as configCmd from "./bot/config-cmd";
+import { botEnv, callDiscord } from "dressed/utils";
+import * as createChannelBtn from "./bot/btns/create-channel";
+import * as createRoleBtn from "./bot/btns/create-role";
+import * as chooseRoleSelect from "./bot/choose-role-select";
+import * as configCmd from "./bot/cmds/config";
+import * as initCmd from "./bot/cmds/init";
 import * as configModal from "./bot/config-modal";
 import { addAuthorization, countAuths, getGuildInfo } from "./db";
 
@@ -16,8 +20,8 @@ interface Env {
 
 interface AuthBody {
   code?: string;
-  guild_id?: string;
   altcha?: Payload;
+  roles?: string[];
 }
 
 export default {
@@ -27,10 +31,25 @@ export default {
     if (url.pathname === "/api/bot") {
       return handleRequest(
         req,
-        { config: configCmd },
-        { modals: { config: { ...configModal } } },
+        { config: configCmd, init: initCmd },
+        {
+          buttons: {
+            [createChannelBtn.pattern]: createChannelBtn,
+            "create-role": createRoleBtn,
+          },
+          modals: { config: { ...configModal } },
+          selects: { "choose-role": chooseRoleSelect },
+        },
         {},
       );
+    }
+
+    let proxyPayload: Awaited<ReturnType<typeof verifySignature>>;
+
+    try {
+      proxyPayload = await verifySignature(req);
+    } catch (e) {
+      return Response.json(typeof e === "string" ? e : "Invalid headers", { status: 401 });
     }
 
     if (url.pathname === "/api/challenge") {
@@ -66,14 +85,8 @@ export default {
         return Response.json("Invalid JSON", { status: 400 });
       }
 
-      if (!body.code || !body.guild_id || !body.altcha) {
+      if (!body.code || !body.altcha) {
         return Response.json("Invalid body format", { status: 400 });
-      }
-
-      try {
-        await verifySignature(req);
-      } catch (e) {
-        return Response.json(typeof e === "string" ? e : "Invalid headers", { status: 401 });
       }
 
       try {
@@ -104,47 +117,55 @@ export default {
         return Response.json({ error: "Bot verification unavailable" }, { status: 503 });
       }
 
-      const response = await fetch("https://discord.com/api/v10/oauth2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: botEnv.DISCORD_APP_ID,
-          client_secret: env.DISCORD_SECRET,
-          grant_type: "authorization_code",
-          code: body.code,
-        }).toString(),
-      });
+      const tokenParams = new URLSearchParams({
+        client_id: botEnv.DISCORD_APP_ID,
+        client_secret: env.DISCORD_SECRET,
+        grant_type: "authorization_code",
+        code: body.code,
+      }).toString();
 
-      if (!response.ok) {
-        console.error("Discord token exchange failed:", await response.text());
-        return Response.json("Discord authentication failed", { status: 401 });
-      }
+      const tokenResponse = await callDiscord(
+        "/oauth2/token",
+        { method: "POST" },
+        {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          hooks: { onBeforeFetch: (req) => new Request(req, { body: tokenParams }) },
+        },
+      );
 
-      const token = (await response.json()) as { access_token: string };
+      const { access_token } = (await tokenResponse.json()) as { access_token: string };
+      const $req = { authorization: `Bearer ${access_token}` };
 
-      const [guildInfo, member] = await Promise.all([
-        getGuildInfo(body.guild_id),
-        getCurrentUserMember(body.guild_id, { authorization: `Bearer ${token.access_token}` }),
+      const [guildInfo, prevNumAuths] = await Promise.all([
+        getGuildInfo(proxyPayload.guild_id).then(async (info) => {
+          const shouldAction = info && !body.roles?.includes(info.add_role);
+          await Promise.all([
+            shouldAction &&
+              addMemberRole(proxyPayload.guild_id, proxyPayload.user_id, info.add_role),
+            addAuthorization(
+              proxyPayload.guild_id,
+              proxyPayload.user_id,
+              !!shouldAction,
+              generateFingerprint(Object.fromEntries(req.headers)),
+            ),
+          ]);
+          return info;
+        }),
+        countAuths(proxyPayload.user_id).then(async (auths) => {
+          await modifyRoleConnection(
+            undefined,
+            { metadata: { verified_times: auths + 1, last_verified_at: new Date().toISOString() } },
+            $req,
+          ).catch(() => {});
+          return auths;
+        }),
       ]);
 
-      const [, , userAuths] =
-        guildInfo && member.roles.includes(guildInfo.add_role)
-          ? []
-          : await Promise.all([
-              guildInfo && addMemberRole(body.guild_id, member.user.id, guildInfo.add_role),
-              addAuthorization(
-                body.guild_id,
-                member.user.id,
-                generateFingerprint(Object.fromEntries(req.headers)),
-              ).catch(() => {}),
-              countAuths(member.user.id).catch(() => {}),
-            ]);
-
       return Response.json({
-        access_token: token.access_token,
+        access_token,
         send_to: guildInfo?.send_to,
         auth_does_action: !!guildInfo,
-        num_auths: userAuths,
+        num_auths: prevNumAuths + 1,
       });
     }
 
@@ -158,8 +179,12 @@ async function verifySignature(req: Request) {
   const payload = req.headers.get("X-Discord-Proxy-Payload") ?? "";
 
   const payloadBytes = Buffer.from(payload, "base64");
-  const payloadString = payloadBytes.toString("utf-8");
-  const payloadData = JSON.parse(payloadString);
+  const payloadData = JSON.parse(payloadBytes.toString("utf-8")) as {
+    created_at: number;
+    expires_at: number;
+    guild_id: string;
+    user_id: string;
+  };
 
   if (payloadData.created_at.toString() !== timestamp) {
     throw "Invalid request timestamp";
@@ -178,13 +203,15 @@ async function verifySignature(req: Request) {
       false,
       ["verify"],
     ),
-    Buffer.from(signature, "hex"),
+    Buffer.from(signature, "base64"),
     payloadBytes,
   );
 
   if (!isVerified) {
     throw "Invalid request signature";
   }
+
+  return payloadData;
 }
 
 function generateFingerprint(headers: Record<string, string>) {

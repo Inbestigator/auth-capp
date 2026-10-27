@@ -18,6 +18,7 @@ await db.execute(`
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     guild_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
+    did_action BOOLEAN NOT NULL,
     header_print TEXT NOT NULL,
     authorized_at TEXT NOT NULL DEFAULT (datetime('now'))
   )

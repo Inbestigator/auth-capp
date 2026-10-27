@@ -7,15 +7,15 @@
     "start": "bun src/index.ts"
   },
   "dependencies": {
-    "@discord/embedded-app-sdk": "^2.5.0",
+    "@discord/embedded-app-sdk": "^3.0.0-beta.3",
     "@libsql/client": "^0.18.0",
-    "altcha": "^3.3.0",
-    "altcha-lib": "^2.6.0",
+    "altcha": "^3.5.0",
+    "altcha-lib": "^2.8.0",
     "dressed": "^2.1.0-canary.1",
-    "wrangler": "^4.148.0"
+    "wrangler": "^4.154.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.4",
     "typescript": "^7.0.2"
   }
 }
