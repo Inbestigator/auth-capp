@@ -1,5 +1,5 @@
 import { type CommandConfig, type CommandInteraction, Label, SelectMenu } from "dressed";
-import { getGuildInfo } from "../db";
+import { getGuildInfo } from "../../db";
 
 export const config = {
   description: "Configure the bot",
