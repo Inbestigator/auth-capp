@@ -1,4 +1,10 @@
-import { type CommandConfig, type CommandInteraction, Label, SelectMenu } from "dressed";
+import {
+  type CommandConfig,
+  type CommandInteraction,
+  type ComponentInteraction,
+  Label,
+  SelectMenu,
+} from "dressed";
 import { getGuildInfo } from "../../db";
 
 export const config = {
@@ -7,7 +13,7 @@ export const config = {
   contexts: ["Guild"],
 } satisfies CommandConfig;
 
-export default async function (interaction: CommandInteraction) {
+export default async function (interaction: CommandInteraction | ComponentInteraction) {
   const { guild } = interaction;
   if (!guild) return;
   const { send_to, add_role } = (await getGuildInfo(guild.id)) ?? {};

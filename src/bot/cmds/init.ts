@@ -22,7 +22,7 @@ export default async function (interaction: CommandInteraction) {
     components: [
       Container(
         Section(
-          ["## Verified Role"],
+          ["### Verified Role", "This role is given to users after authorizing"],
           Button({ custom_id: "create-role", label: "Create a new one" }),
         ),
         ActionRow(

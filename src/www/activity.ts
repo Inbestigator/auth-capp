@@ -7,7 +7,7 @@ const loaderText = document.getElementById("loader-text");
 const ossLink = document.getElementById("oss-link");
 const widget = document.querySelector("altcha-widget");
 
-const discordSdk = new DiscordSDK("1553441490707939419");
+const discordSdk = new DiscordSDK(process.env.PUBLIC_DISCORD_APP_ID as string);
 
 if (ossLink) {
   ossLink.onclick = () =>

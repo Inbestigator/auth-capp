@@ -31,11 +31,11 @@ export default async function (interaction: ComponentInteraction<"RoleSelect">) 
       components: [
         Container(
           Section(
-            [
-              "The next step is to create a channel for users to verify in.",
-              `-# It will be configured so that @everyone can view it but <@&${roleId}> (the verified role) cannot`,
-            ],
-            Button({ custom_id: `create-channel-${roleId}`, label: "Sounds good" }),
+            ["### Authorization channel", "Setup the channel users should open to verify"],
+            Button({ custom_id: `create-channel-${roleId}`, label: "Create channel" }),
+          ),
+          TextDisplay(
+            `-# It will be configured so that @everyone can view it but <@&${roleId}> (the verified role) cannot`,
           ),
         ),
       ],

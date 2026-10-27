@@ -4,6 +4,7 @@ import { deriveKey } from "altcha-lib/algorithms/pbkdf2";
 import { addMemberRole, modifyRoleConnection } from "dressed";
 import { handleRequest } from "dressed/server";
 import { botEnv, callDiscord } from "dressed/utils";
+import * as configBtn from "./bot/btns/config";
 import * as createChannelBtn from "./bot/btns/create-channel";
 import * as createRoleBtn from "./bot/btns/create-role";
 import * as chooseRoleSelect from "./bot/choose-role-select";
@@ -34,6 +35,7 @@ export default {
         { config: configCmd, init: initCmd },
         {
           buttons: {
+            config: configBtn,
             [createChannelBtn.pattern]: createChannelBtn,
             "create-role": createRoleBtn,
           },
