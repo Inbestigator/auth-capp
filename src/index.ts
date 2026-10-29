@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { createChallenge, type Payload, randomInt, verifySolution } from "altcha-lib";
 import { deriveKey } from "altcha-lib/algorithms/pbkdf2";
-import { addMemberRole, modifyRoleConnection } from "dressed";
+import { addMemberRole, removeMember } from "dressed";
 import { handleRequest } from "dressed/server";
 import { botEnv, callDiscord } from "dressed/utils";
 import * as configBtn from "./bot/btns/config";
@@ -112,6 +112,9 @@ export default {
         });
 
         if (!verification.verified) {
+          await removeMember(proxyPayload.guild_id, proxyPayload.user_id, {
+            reason: "Failed ALTCHA challenge",
+          }).catch(() => {});
           return Response.json({ error: "Bot verification failed" }, { status: 403 });
         }
       } catch (error) {
@@ -126,19 +129,25 @@ export default {
         code: body.code,
       }).toString();
 
-      const tokenResponse = await callDiscord(
-        "/oauth2/token",
-        { method: "POST" },
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          hooks: { onBeforeFetch: (req) => new Request(req, { body: tokenParams }) },
-        },
-      );
+      let tokenResponse: Response;
 
-      const { access_token } = (await tokenResponse.json()) as { access_token: string };
-      const $req = { authorization: `Bearer ${access_token}` };
+      try {
+        tokenResponse = await callDiscord(
+          "/oauth2/token",
+          { method: "POST" },
+          {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            hooks: { onBeforeFetch: (req) => new Request(req, { body: tokenParams }) },
+          },
+        );
+      } catch {
+        await removeMember(proxyPayload.guild_id, proxyPayload.user_id, {
+          reason: "Failed OAuth verification",
+        }).catch(() => {});
+        return Response.json({ error: "Token exchange failed" }, { status: 503 });
+      }
 
-      const [guildInfo, prevNumAuths] = await Promise.all([
+      const [guildInfo, prevNumAuths, { access_token }] = await Promise.all([
         getGuildInfo(proxyPayload.guild_id).then(async (info) => {
           const shouldAction = info && !body.roles?.includes(info.add_role);
           await Promise.all([
@@ -153,14 +162,8 @@ export default {
           ]);
           return info;
         }),
-        countAuths(proxyPayload.user_id).then(async (auths) => {
-          await modifyRoleConnection(
-            undefined,
-            { metadata: { verified_times: auths + 1, last_verified_at: new Date().toISOString() } },
-            $req,
-          ).catch(() => {});
-          return auths;
-        }),
+        countAuths(proxyPayload.user_id),
+        tokenResponse.json() as Promise<{ access_token: string }>,
       ]);
 
       return Response.json({

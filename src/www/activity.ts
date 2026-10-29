@@ -47,7 +47,7 @@ const [altcha, [{ code }, member]] = await Promise.all([
       discordSdk.commands.authorize({
         client_id: clientId,
         prompt: "none",
-        scope: ["role_connections.write"],
+        scope: ["openid" as "identify"],
       }),
       discordSdk.commands.getCurrentUserGuildMember({ guild_id: guildId }),
     ]),

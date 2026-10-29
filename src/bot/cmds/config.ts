@@ -9,7 +9,7 @@ import { getGuildInfo } from "../../db";
 
 export const config = {
   description: "Configure the bot",
-  default_member_permissions: ["ManageRoles", "ManageGuild", "ModerateMembers"],
+  default_member_permissions: ["ManageRoles", "ModerateMembers"],
   contexts: ["Guild"],
 } satisfies CommandConfig;
 

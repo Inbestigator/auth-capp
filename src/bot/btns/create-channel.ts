@@ -6,7 +6,6 @@ import {
   Section,
   TextDisplay,
 } from "dressed";
-import { botEnv } from "dressed/utils";
 
 export const pattern = "^create-channel-(?<role>\\d+)$";
 
@@ -20,8 +19,9 @@ export default async function (interaction: ComponentInteraction, args: { role: 
         { id: guild.id, type: 0, allow: (1 << 10).toString() },
         { id: args.role, type: 0, deny: (1 << 10).toString() },
       ],
-      type: 21,
-      application_id: botEnv.DISCORD_APP_ID,
+      // TODO uncomment when public
+      // type: 21,
+      // application_id: botEnv.DISCORD_APP_ID,
     }),
     interaction.deferUpdate(),
   ]);

@@ -4,53 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Authorizing</title>
+    <link rel="stylesheet" href="./styles.css" />
     <script>
       const params = new URLSearchParams(window.location.search);
-      if (params.get("theme") === "light") {
-        document.documentElement.classList.add("light");
-      }
+      document.documentElement.classList.add(params.get("theme") === "light" ? "light" : "dark");
     </script>
     <style>
-      :root {
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        color: #fafafa;
-        background: #09090b;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
       body {
-        min-height: 100vh;
-        margin: 0;
         display: flex;
         justify-content: end;
         align-items: center;
         flex-direction: column;
+        line-height: normal;
       }
 
       footer {
         padding: 0 0 1rem 0;
-        color: color-mix(in oklab, currentColor 50%, transparent);
+        color: var(--faint);
         font-size: x-small;
       }
 
       footer span {
-        color: color-mix(in oklab, blue 50%, currentColor);
+        color: var(--link);
         cursor: pointer;
         text-decoration: underline;
-      }
-
-      #root {
-        position: relative;
       }
 
       #loader {
@@ -59,9 +36,10 @@
         gap: 0.75rem;
         padding: 0.75rem 1rem;
         margin-bottom: 8rem;
-        border: 1px solid #27272a;
-        border-radius: 1rem;
-        background: #18181b;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
         color: color-mix(in oklab, currentColor 75%, transparent);
         font-size: smaller;
         font-weight: 500;
@@ -75,54 +53,23 @@
       }
 
       #loader .loader-icon {
-        color: #a1a1aa;
+        color: var(--icon);
         animation: spin 0.8s linear infinite;
       }
 
       #loader.success .loader-icon {
-        color: #22c55e;
+        color: var(--success);
         animation: none;
       }
 
       #loader.error .loader-icon {
-        color: #ef4444;
+        color: var(--danger);
         animation: none;
-      }
-
-      :root.light {
-        color: #18181b;
-        background: #fafafa;
-      }
-
-      :root.light #loader {
-        border-color: #e4e4e7;
-        background: #ffffff;
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.05),
-          0 0 0 1px rgba(0, 0, 0, 0.01);
-      }
-
-      :root.light #loader .loader-icon {
-        color: #71717a;
-      }
-
-      :root.light #loader.success .loader-icon {
-        color: #16a34a;
-      }
-
-      :root.light #loader.error .loader-icon {
-        color: #dc2626;
       }
 
       @keyframes spin {
         to {
           transform: rotate(360deg);
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        #loader .loader-icon {
-          animation: none;
         }
       }
     </style>

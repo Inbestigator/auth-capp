@@ -11,7 +11,7 @@ import {
 
 export const config = {
   description: "Set up the bot",
-  default_member_permissions: ["ManageRoles", "ManageGuild", "ModerateMembers"],
+  default_member_permissions: ["ManageRoles", "ManageChannels", "ModerateMembers"],
   contexts: ["Guild"],
 } satisfies CommandConfig;
 

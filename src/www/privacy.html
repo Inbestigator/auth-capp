@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy · Inlet</title>
+    <meta name="description" content="How Inlet collects, uses, and protects data." />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <header class="container">
+      <nav class="site-nav">
+        <a class="brand" href="/">
+          <span class="brand-mark">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+              />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </span>
+          Inlet
+        </a>
+        <div class="nav-links">
+          <a href="/privacy" aria-current="page">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="https://github.com/Inbestigator/auth-capp" target="_blank" rel="noopener"
+            >GitHub</a
+          >
+        </div>
+      </nav>
+    </header>
+    <main class="container narrow prose">
+      <h1>Privacy Policy</h1>
+      <p class="meta">Last updated October 27, 2026</p>
+      <p class="lead">
+        Inlet is a Discord bot that verifies members before giving them access to a server. This
+        policy explains what we collect to do that, and what we don't.
+      </p>
+      <h2>What we collect</h2>
+      <p>When a member verifies, or an admin configures the bot, we store:</p>
+      <ul>
+        <li>
+          <strong>Server configuration:</strong> your server's ID, the verified role ID, and the
+          redirect channel ID.
+        </li>
+        <li>
+          <strong>Authorization records:</strong> the server ID, your Discord user ID, whether the
+          bot granted a role, and a timestamp.
+        </li>
+        <li>
+          <strong>A device fingerprint:</strong> a one-way SHA-256 hash derived from request headers
+          (browser, language, and similar). We can't reverse it into your browser details; it is
+          used to spot repeated or abusive verification attempts.
+        </li>
+      </ul>
+      <h2>What we use but don't store</h2>
+      <ul>
+        <li>
+          <strong>Discord authorization:</strong> verifying uses Discord's
+          <code>role_connections.write</code> scope. The access token is used for that request and
+          is not saved to our database.
+        </li>
+        <li>
+          <strong>Your roles in the server:</strong> read at verification time to decide whether the
+          verified role needs to be added.
+        </li>
+        <li>
+          <strong>CAPTCHA:</strong> we use ALTCHA, a proof-of-work challenge that runs on our own
+          server. It doesn't use cookies or send data to a third-party CAPTCHA provider.
+        </li>
+      </ul>
+      <h2>Linked role metadata</h2>
+      <p>
+        After you verify, we update your Discord profile's role connection with how many times
+        you've verified and when you last did. This is visible to you and to servers that use
+        Discord linked roles.
+      </p>
+      <h2>How we use data</h2>
+      <p>
+        Only to operate the bot: granting the verified role, redirecting you after verification,
+        showing your verification count, and preventing abuse. We don't sell data, show ads, or
+        build profiles.
+      </p>
+      <h2>Who we share it with</h2>
+      <p>
+        We don't share data with anyone for their own purposes. It is processed by infrastructure
+        providers needed to run the service, namely Discord (the platform itself), Cloudflare
+        (hosting), and our database host. Server admins don't get access to authorization records
+        through the bot.
+      </p>
+      <h2>Retention and deletion</h2>
+      <p>
+        We keep data for as long as it's needed to run the bot. Removing the bot from your server
+        stops new data from being collected for it. To request deletion of your data, or of your
+        server's data,
+        <a href="https://github.com/Inbestigator/auth-capp/issues" target="_blank" rel="noopener"
+          >open an issue on GitHub</a
+        >
+        (please don't post private information publicly).
+      </p>
+      <h2>Children</h2>
+      <p>
+        Inlet is only for use on Discord, which requires users to meet its minimum age. We don't
+        knowingly collect data from anyone under that age.
+      </p>
+      <h2>Changes</h2>
+      <p>
+        If we change this policy, we'll update the date above. Continued use of the bot means you
+        accept the updated policy.
+      </p>
+      <h2>Contact</h2>
+      <p>
+        Questions?
+        <a href="https://github.com/Inbestigator/auth-capp/issues" target="_blank" rel="noopener"
+          >open an issue on GitHub</a
+        >.
+      </p>
+    </main>
+  </body>
+</html>

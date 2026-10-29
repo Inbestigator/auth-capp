@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inlet: Simple member verification for Discord</title>
+    <meta
+      name="description"
+      content="Inlet is a Discord bot that verifies new members with a quick, invisible CAPTCHA and gives them a role. No codes, no DMs."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./home.ts"></script>
+    <style>
+      .hero {
+        padding-block: 6rem 3rem;
+        text-align: center;
+      }
+
+      .hero h1 {
+        max-width: 14ch;
+        margin-inline: auto;
+        font-size: clamp(2.5rem, 4vw, 4.5rem);
+        letter-spacing: -0.04em;
+      }
+
+      .hero p {
+        max-width: 34rem;
+        margin: 1.25rem auto 0;
+        color: var(--muted);
+        font-size: 1.125rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 1rem;
+        padding-block: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="container">
+      <nav class="site-nav">
+        <a class="brand" href="/">
+          <span class="brand-mark">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+              />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </span>
+          Inlet
+        </a>
+        <div class="nav-links">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="https://github.com/Inbestigator/auth-capp" target="_blank" rel="noopener"
+            >GitHub</a
+          >
+        </div>
+      </nav>
+    </header>
+    <main>
+      <div class="container hero">
+        <h1>Verification without leaving Discord.</h1>
+        <p>
+          Inlet uses app channels to verify members in place. No links, no bots DMing, no external
+          sites.
+        </p>
+        <div class="actions">
+          <a class="btn primary" id="invite" href="/">Add to Discord</a>
+          <a
+            class="btn"
+            href="https://github.com/Inbestigator/auth-capp"
+            target="_blank"
+            rel="noopener"
+            >View source</a
+          >
+        </div>
+      </div>
+
+      <div class="container grid">
+        <div class="card">
+          <h3>Stays in Discord</h3>
+          <p>Members verify in a channel right where they joined.</p>
+        </div>
+        <div class="card">
+          <h3>Invisible CAPTCHA</h3>
+          <p>A background proof-of-work check. Nothing to click or solve.</p>
+        </div>
+        <div class="card">
+          <h3>Set up with <code>/init</code></h3>
+          <p>Pick a role, create the channel, done.</p>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
